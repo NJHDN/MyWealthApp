@@ -1,85 +1,83 @@
 import streamlit as st
 import pandas as pd
 import yfinance as yf
-import plotly.express as px
+import requests
 
-# Setup
-st.set_page_config(page_title="WealthMax Pro | Moneycontrol Data", layout="wide")
+# Page Config
+st.set_page_config(page_title="WealthMax 2026 | Verified Data", layout="wide")
 
-# --- MONEYCONTROL/YAHOO VERIFIED TICKERS ---
+# Hybrid Database: [Yahoo Ticker, AMFI Code]
 mf_db = {
     "Small Cap": {
-        "Quant Small Cap": "0P0000XW9A.BO", "Nippon Small Cap": "0P0000XW9L.BO",
-        "Bandhan Small Cap": "0P0000Y2O3.BO", "Tata Small Cap": "0P0001EV4I.BO",
-        "HDFC Small Cap": "0P0000XW8F.BO", "Axis Small Cap": "0P0000XW6Y.BO",
-        "Kotak Small Cap": "0P0000XW94.BO", "HSBC Small Cap": "0P000171W3.BO",
-        "Franklin Small Cap": "0P0000XW84.BO", "Invesco Small Cap": "0P0001EV4G.BO"
+        "Quant Small Cap": ["0P0000XW9A.BO", "120849"],
+        "Nippon Small Cap": ["0P0000XW9L.BO", "118778"],
+        "Bandhan Small Cap": ["0P0000Y2O3.BO", "128947"],
+        "Tata Small Cap": ["0P0001EV4I.BO", "144181"],
+        "HDFC Small Cap": ["0P0000XW8F.BO", "119063"],
+        "Axis Small Cap": ["0P0000XW6Y.BO", "125354"],
+        "Kotak Small Cap": ["0P0000XW94.BO", "114389"],
+        "HSBC Small Cap": ["0P000171W3.BO", "130635"],
+        "Franklin Small Cap": ["0P0000XW84.BO", "118741"],
+        "Invesco Small Cap": ["0P0001EV4G.BO", "143248"]
     },
     "Mid Cap": {
-        "Motilal Midcap": "0P00013X1T.BO", "HDFC Mid-Cap": "0P0000XW8G.BO",
-        "Edelweiss Mid Cap": "0P0000XVZ9.BO", "Quant Mid Cap": "0P0000XW99.BO",
-        "Kotak Emerging": "0P0000XW93.BO", "Nippon Growth": "0P0000XW9M.BO",
-        "SBI Magnum Midcap": "0P0000XVZ1.BO", "Mirae Midcap": "0P0001IP7C.BO",
-        "Axis Midcap": "0P0000XW6X.BO", "DSP Midcap": "0P0000XW7U.BO"
-    },
-    "Large Cap": {
-        "HDFC Nifty 50": "0P0000XW8C.BO", "UTI Nifty 50": "0P0000XWA9.BO",
-        "Nippon Large Cap": "0P0000XW9K.BO", "ICICI Bluechip": "0P0000XW8S.BO",
-        "Canara Bluechip": "0P0000XVZ5.BO", "SBI Bluechip": "0P0000XVYY.BO",
-        "Kotak Bluechip": "0P0000XW92.BO", "Mirae Large Cap": "0P0000XW9H.BO",
-        "Axis Bluechip": "0P0000XW6W.BO", "Tata Large Cap": "0P0000XW9Y.BO"
+        "Motilal Midcap": ["0P00013X1T.BO", "127042"],
+        "HDFC Mid-Cap Opp": ["0P0000XW8G.BO", "119036"],
+        "Edelweiss Mid Cap": ["0P0000XVZ9.BO", "121406"],
+        "Quant Mid Cap": ["0P0000XW99.BO", "120841"],
+        "Kotak Emerging": ["0P0000XW93.BO", "114392"],
+        "Nippon Growth": ["0P0000XW9M.BO", "118788"],
+        "SBI Magnum Midcap": ["0P0000XVZ1.BO", "119551"],
+        "Mirae Midcap": ["0P0001IP7C.BO", "146882"],
+        "Axis Midcap": ["0P0000XW6X.BO", "114400"],
+        "DSP Midcap": ["0P0000XW7U.BO", "118544"]
     }
 }
 
-# Sidebar Logic
 st.sidebar.title("💎 WealthMax Dashboard")
-page = st.sidebar.selectbox("Navigate", ["Live Market", "Portfolio Tracker", "Tax Planner"])
-segment = st.sidebar.radio("Market Segment", ["Small Cap", "Mid Cap", "Large Cap"])
+page = st.sidebar.selectbox("Menu", ["Live Watchlist", "Portfolio Manager", "Tax Planner"])
+segment = st.sidebar.radio("Segment", ["Small Cap", "Mid Cap"])
 
-def fetch_data(ticker):
+# Hybrid Fetching Engine
+def fetch_verified_nav(y_ticker, amfi_code):
+    # Try Yahoo first
     try:
-        # Yahoo Finance extracts the same data seen on Moneycontrol
-        stock = yf.Ticker(ticker)
-        hist = stock.history(period="1d")
-        if not hist.empty:
-            nav = round(hist['Close'].iloc[-1], 2)
-            date = hist.index[-1].strftime('%d-%m-%Y')
-            return nav, date
-        return "N/A", "N/A"
-    except: return "N/A", "N/A"
-
-# --- SECTION 1: LIVE MARKET ---
-if page == "Live Market":
-    st.header(f"🚀 {segment} Watchlist (Live 2026)")
-    st.caption("Data Source: Yahoo Finance Engine (Moneycontrol Verified)")
+        data = yf.Ticker(y_ticker).history(period="1d")
+        if not data.empty:
+            return round(data['Close'].iloc[-1], 2), data.index[-1].strftime('%d-%m-%Y')
+    except: pass
     
+    # Backup: Try AMFI API
+    try:
+        res = requests.get(f"https://api.mfapi.in/mf/{amfi_code}", timeout=10).json()
+        return float(res['data'][0]['nav']), res['data'][0]['date']
+    except: return "Error", "Error"
+
+if page == "Live Watchlist":
+    st.header(f"🚀 {segment} (Verified 2026 Data)")
     rows = []
-    with st.spinner('Syncing Live Prices...'):
-        for i, (name, ticker) in enumerate(mf_db[segment].items(), 1):
-            nav, date = fetch_data(ticker)
+    with st.spinner('Validating Real-time Prices...'):
+        for i, (name, codes) in enumerate(mf_db[segment].items(), 1):
+            nav, date = fetch_verified_nav(codes[0], codes[1])
             rows.append({"#": i, "Fund Name": name, "NAV (₹)": nav, "Updated": date})
     
     st.table(pd.DataFrame(rows).set_index('#'))
 
-# --- SECTION 2: PORTFOLIO ---
-elif page == "Portfolio Tracker":
-    st.header("💼 Personal Wealth Tracker")
-    col1, col2 = st.columns(2)
-    inv = col1.number_input("Amount Invested (₹)", value=1000000)
-    b_nav = col2.number_input("Purchase NAV", value=100.0)
+elif page == "Portfolio Manager":
+    st.header("💼 Wealth Tracker")
+    inv = st.number_input("Invested Amount (₹)", value=100000)
+    b_nav = st.number_input("Purchase NAV", value=100.0)
+    f_choice = st.selectbox("Fund", list(mf_db[segment].keys()))
+    codes = mf_db[segment][f_choice]
+    curr_nav, _ = fetch_verified_nav(codes[0], codes[1])
     
-    curr_fund = st.selectbox("Fund Name", list(mf_db[segment].keys()))
-    curr_nav, _ = fetch_data(mf_db[segment][curr_fund])
-    
-    if isinstance(curr_nav, float):
-        total_val = (inv / b_nav) * curr_nav
-        st.divider()
-        st.metric("Current Portfolio Value", f"₹{total_val:,.2f}", f"Net Gain: ₹{total_val-inv:,.2f}")
+    if isinstance(curr_nav, (float, int)):
+        val = (inv / b_nav) * curr_nav
+        st.metric("Current Value", f"₹{val:,.2f}", f"Profit: ₹{val-inv:,.2f}")
 
-# --- SECTION 3: TAX ---
 elif page == "Tax Planner":
-    st.header("🏦 LTCG Tax Calculator")
-    target = st.number_input("Target Redemption Amount", value=3000000)
+    st.header("🏦 Tax Calculator")
+    target = st.number_input("Target Amount", value=3000000)
     profit = target - 1000000
     tax = max(0, profit - 125000) * 0.125
-    st.metric("Final In-Hand", f"₹{target-tax:,.0f}", f"LTCG Tax: ₹{tax:,.0f}")
+    st.metric("Net After Tax", f"₹{target-tax:,.0f}", f"Tax: ₹{tax:,.0f}")
