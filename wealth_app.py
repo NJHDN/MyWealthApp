@@ -18,47 +18,34 @@ def get_live_nav(scheme_code):
         return None, None
 
 mf_db = {
-    # --- SMALL CAP (TOP 10) ---
-    "Quant Small Cap (D)": "120849",
-    "Nippon India Small Cap (D)": "118778",
-    "Bandhan Small Cap (D)": "128947",
-    "Tata Small Cap (D)": "144181",
-    "HDFC Small Cap (D)": "119063",
-    "Axis Small Cap (D)": "125354",
-    "Kotak Small Cap (D)": "114389",
-    "HSBC Small Cap (D)": "130635",
-    "Franklin Small Cap (D)": "118741",
-    "Invesco Small Cap (D)": "143248",
     
-    # --- MID CAP (TOP 10) ---
-    "Motilal Oswal Midcap (D)": "127042",
-    "HDFC Mid-Cap Opp. (D)": "119036",
-    "Edelweiss Mid Cap (D)": "121406",
-    "Quant Mid Cap (D)": "120841",
-    "Kotak Emerging Equity (D)": "114392",
-    "Nippon India Growth (D)": "118788",
-    "SBI Magnum Midcap (D)": "119551",
-    "Mirae Asset Midcap (D)": "146882",
-    "Axis Midcap (D)": "114400",
-    "DSP Midcap (D)": "118544",
-    
-    # --- LARGE CAP (TOP 10) ---
-    "HDFC Index Nifty 50 (D)": "119060",
-    "UTI Nifty 50 Index (D)": "120716",
-    "Nippon India Large Cap (D)": "118784",
-    "ICICI Pru Bluechip (D)": "118972",
-    "Canara Robeco Bluechip (D)": "118671",
-    "SBI Bluechip (D)": "119598",
-    "Kotak Bluechip (D)": "114385",
-    "Mirae Asset Large Cap (D)": "118834",
-    "Axis Bluechip (D)": "118471",
-    "Tata Large Cap (D)": "119230"
+    # SMALL CAP (10)
+    "Quant Small Cap (D)": "120849", "Nippon Small Cap (D)": "118778", "Bandhan Small Cap (D)": "128947",
+    "Tata Small Cap (D)": "144181", "HDFC Small Cap (D)": "119063", "Axis Small Cap (D)": "125354",
+    "Kotak Small Cap (D)": "114389", "HSBC Small Cap (D)": "130635", "Franklin Small Cap (D)": "118741", "Invesco Small Cap (D)": "143248",
+    # MID CAP (10)
+    "Motilal Midcap (D)": "127042", "HDFC Mid-Cap (D)": "119036", "Edelweiss Mid Cap (D)": "121406",
+    "Quant Mid Cap (D)": "120841", "Kotak Emerging (D)": "114392", "Nippon Growth (D)": "118788",
+    "SBI Magnum Midcap (D)": "119551", "Mirae Midcap (D)": "146882", "Axis Midcap (D)": "114400", "DSP Midcap (D)": "118544",
+    # LARGE CAP (10)
+    "HDFC Nifty 50 (D)": "119060", "UTI Nifty 50 (D)": "120716", "Nippon Large Cap (D)": "118784",
+    "ICICI Bluechip (D)": "118972", "Canara Bluechip (D)": "118671", "SBI Bluechip (D)": "119598",
+    "Kotak Bluechip (D)": "114385", "Mirae Large Cap (D)": "118834", "Axis Bluechip (D)": "118471", "Tata Large Cap (D)": "119230"
 }
 
 # --- SIDEBAR NAVIGATION ---
-st.sidebar.title("💎 WealthMax v1.0")
-menu = st.sidebar.radio("Menu", ["Live Dashboard", "Deep Analysis", "Portfolio Tracker", "Tax Planner"])
+st.sidebar.title("WealthMax Filter")
+category = st.sidebar.selectbox("Choose Segment", ["Small Cap", "Mid Cap", "Large Cap"])
 
+# Grouping Logic
+if category == "Small Cap":
+    active_funds = dict(list(mf_db.items())[0:10])
+elif category == "Mid Cap":
+    active_funds = dict(list(mf_db.items())[10:20])
+else:
+    active_funds = dict(list(mf_db.items())[20:30])
+
+st.header(f"Live {category} Watchlist")
 # --- 1. LIVE DASHBOARD ---
 if menu == "Live Dashboard":
     st.header("📈 Live Market Watchlist")
