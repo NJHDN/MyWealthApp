@@ -2,12 +2,8 @@ import streamlit as st
 import pandas as pd
 import requests
 import plotly.express as px
-from datetime import datetime
 
-# Page Setup
-st.set_page_config(page_title="WealthMax Pro 2026", layout="wide")
-
-# --- 1. FULL 30 FUNDS DATABASE (Verified Codes) ---
+# 1. Sabse upar 30 Verified Direct-Growth Codes
 mf_db = {
     "Small Cap": {
         "Quant Small Cap": "120849", "Nippon Small Cap": "118778", "Bandhan Small Cap": "128947",
@@ -26,12 +22,11 @@ mf_db = {
     }
 }
 
-# --- 2. SIDEBAR NAVIGATION ---
+# Sidebar Navigation
 st.sidebar.title("💎 WealthMax Super App")
 menu = st.sidebar.selectbox("Go to Section", ["Live Dashboard", "Deep Analysis", "Portfolio Manager", "Tax Planner"])
 category = st.sidebar.radio("Select Segment", ["Small Cap", "Mid Cap", "Large Cap"])
 
-# --- API FETCH FUNCTION ---
 def fetch_nav(code):
     try:
         url = f"https://api.mfapi.in/mf/{code}"
@@ -39,7 +34,7 @@ def fetch_nav(code):
         return float(data['data'][0]['nav']), data['data'][0]['date']
     except: return None, None
 
-# --- SECTION 1: LIVE DASHBOARD ---
+# --- DASHBOARD ---
 if menu == "Live Dashboard":
     st.header(f"📈 Live {category} Watchlist")
     watchlist = []
@@ -47,49 +42,42 @@ if menu == "Live Dashboard":
         for name, code in mf_db[category].items():
             nav, date = fetch_nav(code)
             watchlist.append({"Fund Name": name, "Live NAV (₹)": nav, "Last Updated": date})
-    st.table(pd.DataFrame(watchlist))
+    
+    # Table logic for 1-10 counting
+    df = pd.DataFrame(watchlist)
+    df.index = df.index + 1  # Isse counting 1 se shuru hogi
+    st.table(df)
 
-# --- SECTION 2: DEEP ANALYSIS ---
+# --- DEEP ANALYSIS ---
 elif menu == "Deep Analysis":
     st.header("🔍 Fund Deep Research")
-    selected_fund = st.selectbox("Select Fund for Health Check", list(mf_db[category].keys()))
+    selected_fund = st.selectbox("Select Fund", list(mf_db[category].keys()))
     nav, date = fetch_nav(mf_db[category][selected_fund])
     
     col1, col2, col3 = st.columns(3)
     col1.metric("Current NAV", f"₹{nav}")
-    col2.metric("Alpha (Vs Bench)", "7.5%" if "Small" in category else "4.2%")
-    col3.metric("Risk Level", "Very High" if "Small" in category else "Moderate")
+    col2.metric("Alpha", "7.2%" if "Small" in category else "4.1%")
+    col3.metric("Risk Grade", "High" if "Small" in category else "Low")
     
-    fig = px.pie(names=['Financials', 'IT', 'Energy', 'Consumer'], values=[35, 25, 20, 20], title="Sector Weightage")
+    fig = px.pie(names=['Financials', 'IT', 'Energy', 'Other'], values=[40, 30, 15, 15], title="Sector Allocation")
     st.plotly_chart(fig)
 
-# --- SECTION 3: PORTFOLIO MANAGER ---
+# --- PORTFOLIO ---
 elif menu == "Portfolio Manager":
-    st.header("💼 My Live Portfolio Tracker")
-    col1, col2 = st.columns(2)
-    inv_amt = col1.number_input("Invested Amount (₹)", value=100000)
-    buy_nav = col2.number_input("Purchase NAV", value=50.0)
-    target_fund = st.selectbox("Select Your Fund", list(mf_db[category].keys()))
+    st.header("💼 Live Portfolio")
+    inv = st.number_input("Invested Amount (₹)", value=100000)
+    p_nav = st.number_input("Purchase NAV", value=50.0)
+    f_name = st.selectbox("Fund", list(mf_db[category].keys()))
     
-    curr_nav, _ = fetch_nav(mf_db[category][target_fund])
-    if curr_nav:
-        units = inv_amt / buy_nav
-        curr_val = units * curr_nav
-        profit = curr_val - inv_amt
-        st.divider()
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Current Value", f"₹{curr_val:,.2f}")
-        m2.metric("Profit/Loss", f"₹{profit:,.2f}", f"{(profit/inv_amt)*100:.2f}%")
-        m3.metric("Total Units", f"{units:.2f}")
+    c_nav, _ = fetch_nav(mf_db[category][f_name])
+    if c_nav:
+        curr_val = (inv / p_nav) * c_nav
+        st.metric("Total Value", f"₹{curr_val:,.2f}", f"Profit: ₹{curr_val-inv:,.2f}")
 
-# --- SECTION 4: TAX PLANNER ---
+# --- TAX ---
 elif menu == "Tax Planner":
-    st.header("🏦 LTCG Tax Calculator")
-    invested = st.number_input("Principal Amount", value=1000000)
-    expected = st.number_input("Target Value (₹30L Target)", value=3000000)
-    profit = expected - invested
-    taxable_profit = max(0, profit - 125000) # Feb 2026 rules
-    tax = taxable_profit * 0.125
-    st.metric("Net In-Hand (After Tax)", f"₹{expected - tax:,.2f}", f"Estimated Tax: ₹{tax:,.0f}")
-    st.progress(min(expected/3000000, 1.0))
-    st.write("Progress towards ₹30 Lakh Goal")
+    st.header("🏦 LTCG Tax Planner")
+    target = st.number_input("Expected Maturity Value (₹)", value=3000000)
+    profit = target - 1000000
+    tax = max(0, profit - 125000) * 0.125
+    st.metric("In-Hand Amount", f"₹{target-tax:,.0f}", f"Tax: ₹{tax:,.0f}")
