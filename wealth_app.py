@@ -18,7 +18,7 @@ def get_live_nav(scheme_code):
         return None, None
 
 mf_db = {
-    mf_db = {
+
     "Quant Small Cap (D)": "120849",
     "Nippon Small Cap (D)": "118778",
     "Bandhan Small Cap (D)": "128947",
@@ -29,8 +29,6 @@ mf_db = {
     "HDFC Nifty 50 (D)": "119060",
     "UTI Nifty 50 (D)": "120716",
     "ICICI Bluechip (D)": "118972"
-}
-
 }
 
 # --- SIDEBAR NAVIGATION ---
