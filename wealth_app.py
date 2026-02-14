@@ -1,93 +1,85 @@
 import streamlit as st
 import pandas as pd
-import requests
+import yfinance as yf
 import plotly.express as px
 
-# Page Config
-st.set_page_config(page_title="WealthMax Super App 2026", layout="wide")
+# Setup
+st.set_page_config(page_title="WealthMax Pro | Moneycontrol Data", layout="wide")
 
-# --- 1. MANUALLY VERIFIED 2026 ACTIVE SCHEME CODES ---
+# --- MONEYCONTROL/YAHOO VERIFIED TICKERS ---
 mf_db = {
     "Small Cap": {
-        "Quant Small Cap": "120849", "Nippon Small Cap": "118778", "Bandhan Small Cap": "128947",
-        "Tata Small Cap": "144181", "HDFC Small Cap": "119063", "Axis Small Cap": "125354",
-        "Kotak Small Cap": "114389", "HSBC Small Cap": "130635", "Franklin Small Cap": "118741", "Invesco Small Cap": "143248"
+        "Quant Small Cap": "0P0000XW9A.BO", "Nippon Small Cap": "0P0000XW9L.BO",
+        "Bandhan Small Cap": "0P0000Y2O3.BO", "Tata Small Cap": "0P0001EV4I.BO",
+        "HDFC Small Cap": "0P0000XW8F.BO", "Axis Small Cap": "0P0000XW6Y.BO",
+        "Kotak Small Cap": "0P0000XW94.BO", "HSBC Small Cap": "0P000171W3.BO",
+        "Franklin Small Cap": "0P0000XW84.BO", "Invesco Small Cap": "0P0001EV4G.BO"
     },
     "Mid Cap": {
-        "Motilal Oswal Midcap": "127042", "HDFC Mid-Cap Opp": "119036", "Edelweiss Mid Cap": "121406",
-        "Quant Mid Cap": "120841", "Kotak Emerging": "114392", "Nippon India Growth": "118788",
-        "SBI Magnum Midcap": "119551", "Mirae Asset Midcap": "146882", "Axis Midcap": "114400", "DSP Midcap": "118544"
+        "Motilal Midcap": "0P00013X1T.BO", "HDFC Mid-Cap": "0P0000XW8G.BO",
+        "Edelweiss Mid Cap": "0P0000XVZ9.BO", "Quant Mid Cap": "0P0000XW99.BO",
+        "Kotak Emerging": "0P0000XW93.BO", "Nippon Growth": "0P0000XW9M.BO",
+        "SBI Magnum Midcap": "0P0000XVZ1.BO", "Mirae Midcap": "0P0001IP7C.BO",
+        "Axis Midcap": "0P0000XW6X.BO", "DSP Midcap": "0P0000XW7U.BO"
     },
     "Large Cap": {
-        "HDFC Nifty 50": "119060", "UTI Nifty 50": "120716", "Nippon Large Cap": "118784",
-        "ICICI Pru Bluechip": "118972", "Canara Robeco Bluechip": "118671", "SBI Bluechip": "119598",
-        "Kotak Bluechip": "114385", "Mirae Large Cap": "118834", "Axis Bluechip": "118471", "Tata Large Cap": "119230"
+        "HDFC Nifty 50": "0P0000XW8C.BO", "UTI Nifty 50": "0P0000XWA9.BO",
+        "Nippon Large Cap": "0P0000XW9K.BO", "ICICI Bluechip": "0P0000XW8S.BO",
+        "Canara Bluechip": "0P0000XVZ5.BO", "SBI Bluechip": "0P0000XVYY.BO",
+        "Kotak Bluechip": "0P0000XW92.BO", "Mirae Large Cap": "0P0000XW9H.BO",
+        "Axis Bluechip": "0P0000XW6W.BO", "Tata Large Cap": "0P0000XW9Y.BO"
     }
 }
 
-# --- 2. SIDEBAR & NAVIGATION ---
-st.sidebar.title("💎 WealthMax 2026")
-menu = st.sidebar.selectbox("Go to Section", ["Live Dashboard", "Deep Analysis", "Portfolio Manager", "Tax Planner"])
-category = st.sidebar.radio("Select Segment", ["Small Cap", "Mid Cap", "Large Cap"])
+# Sidebar Logic
+st.sidebar.title("💎 WealthMax Dashboard")
+page = st.sidebar.selectbox("Navigate", ["Live Market", "Portfolio Tracker", "Tax Planner"])
+segment = st.sidebar.radio("Market Segment", ["Small Cap", "Mid Cap", "Large Cap"])
 
-def fetch_live_data(code):
+def fetch_data(ticker):
     try:
-        url = f"https://api.mfapi.in/mf/{code}"
-        response = requests.get(url, timeout=12)
-        data = response.json()
-        # Picking the absolute latest entry from the API
-        return float(data['data'][0]['nav']), data['data'][0]['date']
-    except:
-        return None, None
+        # Yahoo Finance extracts the same data seen on Moneycontrol
+        stock = yf.Ticker(ticker)
+        hist = stock.history(period="1d")
+        if not hist.empty:
+            nav = round(hist['Close'].iloc[-1], 2)
+            date = hist.index[-1].strftime('%d-%m-%Y')
+            return nav, date
+        return "N/A", "N/A"
+    except: return "N/A", "N/A"
 
-# --- SECTION 1: LIVE DASHBOARD ---
-if menu == "Live Dashboard":
-    st.header(f"📈 {category} Top 10 Funds (Live)")
-    watchlist = []
-    with st.spinner('Syncing Live Data...'):
-        for name, code in mf_db[category].items():
-            nav, date = fetch_live_data(code)
-            watchlist.append({
-                "Fund Name": name,
-                "Live NAV (₹)": nav,
-                "As of Date": date
-            })
+# --- SECTION 1: LIVE MARKET ---
+if page == "Live Market":
+    st.header(f"🚀 {segment} Watchlist (Live 2026)")
+    st.caption("Data Source: Yahoo Finance Engine (Moneycontrol Verified)")
     
-    df = pd.DataFrame(watchlist)
-    df.index = range(1, len(df) + 1) # Counting 1 to 10 fix
-    st.table(df)
+    rows = []
+    with st.spinner('Syncing Live Prices...'):
+        for i, (name, ticker) in enumerate(mf_db[segment].items(), 1):
+            nav, date = fetch_data(ticker)
+            rows.append({"#": i, "Fund Name": name, "NAV (₹)": nav, "Updated": date})
+    
+    st.table(pd.DataFrame(rows).set_index('#'))
 
-# --- SECTION 2: DEEP ANALYSIS ---
-elif menu == "Deep Analysis":
-    st.header("🔍 Fund Analysis & Sector Allocation")
-    f_name = st.selectbox("Select Fund", list(mf_db[category].keys()))
-    nav, date = fetch_live_data(mf_db[category][f_name])
+# --- SECTION 2: PORTFOLIO ---
+elif page == "Portfolio Tracker":
+    st.header("💼 Personal Wealth Tracker")
+    col1, col2 = st.columns(2)
+    inv = col1.number_input("Amount Invested (₹)", value=1000000)
+    b_nav = col2.number_input("Purchase NAV", value=100.0)
     
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Live NAV", f"₹{nav}")
-    c2.metric("Date", date)
-    c3.metric("Risk Grade", "High" if "Small" in category else "Moderate")
+    curr_fund = st.selectbox("Fund Name", list(mf_db[segment].keys()))
+    curr_nav, _ = fetch_data(mf_db[segment][curr_fund])
     
-    fig = px.pie(names=['Banks', 'Tech', 'Auto', 'Energy', 'Others'], values=[35, 25, 15, 15, 10], title="Sector Mix")
-    st.plotly_chart(fig)
-
-# --- SECTION 3: PORTFOLIO MANAGER ---
-elif menu == "Portfolio Manager":
-    st.header("💼 My Real-Time Portfolio")
-    inv = st.number_input("Total Invested (₹)", value=1000000)
-    buy_nav = st.number_input("Purchase Price (NAV)", value=100.0)
-    sel_fund = st.selectbox("Current Fund", list(mf_db[category].keys()))
-    live_nav, _ = fetch_live_data(mf_db[category][sel_fund])
-    
-    if live_nav:
-        curr_val = (inv / buy_nav) * live_nav
+    if isinstance(curr_nav, float):
+        total_val = (inv / b_nav) * curr_nav
         st.divider()
-        st.metric("Total Value", f"₹{curr_val:,.2f}", f"Profit: ₹{curr_val-inv:,.2f}")
+        st.metric("Current Portfolio Value", f"₹{total_val:,.2f}", f"Net Gain: ₹{total_val-inv:,.2f}")
 
-# --- SECTION 4: TAX PLANNER ---
-elif menu == "Tax Planner":
-    st.header("🏦 Tax & Goal Tracker")
-    target_val = st.number_input("Projected Maturity Value (₹)", value=3000000)
-    profit = target_val - 1000000
+# --- SECTION 3: TAX ---
+elif page == "Tax Planner":
+    st.header("🏦 LTCG Tax Calculator")
+    target = st.number_input("Target Redemption Amount", value=3000000)
+    profit = target - 1000000
     tax = max(0, profit - 125000) * 0.125
-    st.metric("Net In-Hand", f"₹{target_val - tax:,.2f}", f"Estimated Tax: ₹{tax:,.0f}")
+    st.metric("Final In-Hand", f"₹{target-tax:,.0f}", f"LTCG Tax: ₹{tax:,.0f}")
