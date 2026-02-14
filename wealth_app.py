@@ -18,9 +18,19 @@ def get_live_nav(scheme_code):
         return None, None
 
 mf_db = {
-    "Quant Small Cap": "120849", "Nippon Small Cap": "118778", "Bandhan Small Cap": "128947",
-    "Motilal Midcap": "127042", "HDFC Mid-Cap": "119036", "Edelweiss Mid Cap": "121406",
-    "HDFC Nifty 50": "119060", "UTI Nifty 50": "120716", "ICICI Bluechip": "118972"
+    mf_db = {
+    "Quant Small Cap (D)": "120849",
+    "Nippon Small Cap (D)": "118778",
+    "Bandhan Small Cap (D)": "128947",
+    "Tata Small Cap (D)": "144181",
+    "Motilal Midcap (D)": "127042",
+    "HDFC Mid-Cap (D)": "119036",
+    "Edelweiss Mid Cap (D)": "121406",
+    "HDFC Nifty 50 (D)": "119060",
+    "UTI Nifty 50 (D)": "120716",
+    "ICICI Bluechip (D)": "118972"
+}
+
 }
 
 # --- SIDEBAR NAVIGATION ---
