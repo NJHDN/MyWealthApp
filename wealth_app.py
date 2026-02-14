@@ -5,7 +5,7 @@ import requests
 st.set_page_config(page_title="WealthMax Pro 2026", layout="wide")
 
 # --- 1. MANUALLY VERIFIED DIRECT-GROWTH MASTER CODES (FEB 2026) ---
-# These specific IDs are for the Direct-Growth variants to avoid 2013/2017 data.
+# These specific IDs are for Direct-Growth variants to avoid old 2013/2017 data.
 mf_db = {
     "Small Cap": {
         "Quant Small Cap (D)": "120849", "Nippon Small Cap (D)": "118778", 
@@ -15,17 +15,17 @@ mf_db = {
         "Franklin Small Cap (D)": "118741", "Invesco Small Cap (D)": "143248"
     },
     "Mid Cap": {
-        "Motilal Midcap (D)": "127042", "HDFC Mid-Cap (D)": "119036", 
+        "Motilal Midcap (D)": "127042", "HDFC Mid-Cap Opp (D)": "119036", 
         "Edelweiss Mid Cap (D)": "121406", "Quant Mid Cap (D)": "120841", 
         "Kotak Emerging (D)": "114392", "Nippon Growth (D)": "118788", 
-        "SBI Magnum Midcap (D)": "119551", "Mirae Midcap (D)": "146882", 
+        "SBI Magnum Midcap (D)": "119551", "Mirae Asset Midcap (D)": "146882", 
         "Axis Midcap (D)": "114400", "DSP Midcap (D)": "118544"
     },
     "Large Cap": {
         "HDFC Nifty 50 (D)": "119060", "UTI Nifty 50 (D)": "120716", 
-        "Nippon Large Cap (D)": "118784", "ICICI Bluechip (D)": "118972", 
-        "Canara Bluechip (D)": "118671", "SBI Bluechip (D)": "119598", 
-        "Kotak Bluechip (D)": "114385", "Mirae Large Cap (D)": "118834", 
+        "Nippon Large Cap (D)": "118784", "ICICI Pru Bluechip (D)": "118972", 
+        "Canara Robeco Bluechip (D)": "118671", "SBI Bluechip (D)": "119598", 
+        "Kotak Bluechip (D)": "114385", "Mirae Asset Large Cap (D)": "118834", 
         "Axis Bluechip (D)": "118471", "Tata Large Cap (D)": "119230"
     }
 }
@@ -33,47 +33,33 @@ mf_db = {
 st.sidebar.title("💎 WealthMax Dashboard")
 segment = st.sidebar.radio("Market Segment", ["Small Cap", "Mid Cap", "Large Cap"])
 
-def fetch_amfi_nav(code):
+def fetch_nav(code):
     try:
-        # Direct call to the primary AMFI API
         url = f"https://api.mfapi.in/mf/{code}"
         response = requests.get(url, timeout=15)
         data = response.json()
-        # Fetching the very latest available entry
+        # Fetching the very latest available entry (Index 0)
         latest = data['data'][0]
         return float(latest['nav']), latest['date']
     except Exception:
-        return None, None
+        return "N/A", "N/A"
 
 # --- Main Dashboard ---
 st.header(f"🚀 Live {segment} Watchlist")
-st.write("Source: AMFI Verified Direct Plans (Feb 2026)")
+st.write("Verified Data Source: AMFI India (Direct-Growth Plans)")
 
 watchlist_data = []
-with st.spinner(f'Fetching {segment} Data...'):
+with st.spinner(f'Updating {segment} NAVs...'):
     for i, (name, code) in enumerate(mf_db[segment].items(), 1):
-        nav, date = fetch_amfi_nav(code)
+        nav, date = fetch_nav(code)
         watchlist_data.append({
             "Rank": i,
             "Fund Name": name,
-            "NAV (₹)": nav if nav else "Updating...",
-            "Update Date": date if date else "N/A"
+            "Live NAV (₹)": nav,
+            "Update Date": date
         })
 
 df = pd.DataFrame(watchlist_data).set_index("Rank")
 st.table(df)
 
-# --- Pro Analysis Features ---
-st.markdown("---")
-col1, col2 = st.columns(2)
-
-with col1:
-    st.subheader("🧮 Calculator")
-    amt = st.number_input("Invested Amount (₹)", value=100000)
-    selected_fund = st.selectbox("Select Fund", list(mf_db[segment].keys()))
-    
-with col2:
-    st.subheader("🏦 Tax Planner")
-    st.write("Estimated LTCG (12.5%):")
-    gain = amt * 0.15 # Example gain
-    st.info(f"Tax: ₹{max(0, gain-125000) * 0.125:,.2f}")
+st.info("Tip: If data looks old, click 'Manage app' -> 'Reboot app' to clear system cache.")
