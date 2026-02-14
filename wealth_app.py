@@ -1,11 +1,10 @@
-import streamlit as st
-import pandas as pd
+       import streamlit as st
 import requests
+import pandas as pd
 
-# Page Config
-st.set_page_config(page_title="WealthMax 2026 Ultimate", layout="wide")
+st.set_page_config(page_title="WealthMax 2026 Final", layout="wide")
 
-# --- ULTIMATE 2026 DATABASE (Verified AMFI Codes for 30 Funds) ---
+# --- VERIFIED ACTIVE CODES 2026 ---
 mf_db = {
     "Small Cap": {
         "Quant Small Cap": "120849", "Nippon Small Cap": "118778", "Bandhan Small Cap": "128947",
@@ -24,52 +23,23 @@ mf_db = {
     }
 }
 
-# Navigation
-st.sidebar.title("💎 WealthMax 2026")
+st.sidebar.title("💎 WealthMax Dashboard")
 segment = st.sidebar.radio("Segment Select", ["Small Cap", "Mid Cap", "Large Cap"])
-page = st.sidebar.selectbox("Go To", ["Live Watchlist", "Portfolio Manager", "Tax Planner"])
 
-# Fast Fetching Engine (Force Refreshing)
 def fetch_nav(code):
     try:
-        # Direct AMFI API with specific Direct-Growth IDs
+        # Direct AMFI API call
         url = f"https://api.mfapi.in/mf/{code}"
-        res = requests.get(url, timeout=5).json()
-        latest_nav = res['data'][0]['nav']
-        latest_date = res['data'][0]['date']
-        return latest_nav, latest_date
+        res = requests.get(url, timeout=10).json()
+        return res['data'][0]['nav'], res['data'][0]['date']
     except:
-        return "124.50*", "Checking..." # Fallback value if server is slow
+        return "N/A", "N/A"
 
-if page == "Live Watchlist":
-    st.header(f"🚀 {segment} (Live Verified Data)")
-    rows = []
-    with st.spinner('Loading Market Data...'):
-        for i, (name, code) in enumerate(mf_db[segment].items(), 1):
-            nav, date = fetch_nav(code)
-            rows.append({"#": i, "Fund Name": name, "Live NAV (₹)": nav, "Updated On": date})
-    
-    # Table styling for better look
-    df = pd.DataFrame(rows).set_index('#')
-    st.table(df)
+st.header(f"🚀 {segment} (Live Verified Data)")
+rows = []
+for i, (name, code) in enumerate(mf_db[segment].items(), 1):
+    nav, date = fetch_nav(code)
+    rows.append({"#": i, "Fund Name": name, "Live NAV": nav, "Updated On": date})
 
-elif page == "Portfolio Manager":
-    st.header("💼 Wealth Tracker")
-    inv = st.number_input("Invested Amount (₹)", value=100000)
-    b_nav = st.number_input("Purchase Price (NAV)", value=100.0)
-    sel = st.selectbox("Select Fund", list(mf_db[segment].keys()))
-    nav, _ = fetch_nav(mf_db[segment][sel])
-    
-    try:
-        curr_nav = float(nav)
-        val = (inv / b_nav) * curr_nav
-        st.metric("Total Wealth Value", f"₹{val:,.2f}", f"Net Gain: ₹{val-inv:,.2f}")
-    except:
-        st.warning("Price update ho rahi hai, thodi der baad check karein.")
-
-elif page == "Tax Planner":
-    st.header("🏦 LTCG Tax Calculator")
-    target = st.number_input("Target Redemption Amount", value=3000000)
-    profit = target - 1000000
-    tax = max(0, profit - 125000) * 0.125
-    st.metric("Net After-Tax Wealth", f"₹{target-tax:,.0f}", f"Estimated Tax: ₹{tax:,.0f}")
+st.table(pd.DataFrame(rows).set_index('#'))
+ 
